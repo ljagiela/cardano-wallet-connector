@@ -1326,7 +1326,7 @@ export default class App extends React.Component {
                                 />
                             </FormGroup>
 
-                            <button style={{padding: "10px"}} onClick={this.buildSendTokenTransaction}>Run</button>
+                            <button style={{padding: "10px"}} onClick={this.buildSendTokenTransaction} data-testid="run-button">Run</button>
                         </div>
                     }/>
                     <Tab id="3" title="3. Send ADA to Plutus Script" data-testid="send-ada-plutus" panel={
@@ -1372,7 +1372,7 @@ export default class App extends React.Component {
 
                                 />
                             </FormGroup>
-                            <button style={{padding: "10px"}} onClick={this.buildSendAdaToPlutusScript}>Run</button>
+                            <button style={{padding: "10px"}} onClick={this.buildSendAdaToPlutusScript} data-testid="run-button">Run</button>
                         </div>
                     }/>
                     <Tab id="4" title="4. Send Token to Plutus Script" data-testid="send-token-plutus" panel={
@@ -1459,7 +1459,7 @@ export default class App extends React.Component {
 
                                 />
                             </FormGroup>
-                            <button style={{padding: "10px"}} onClick={this.buildSendTokenToPlutusScript}>Run</button>
+                            <button style={{padding: "10px"}} onClick={this.buildSendTokenToPlutusScript} data-testid="run-button">Run</button>
                         </div>
                     }/>
                     <Tab id="5" title="5. Redeem ADA from Plutus Script" data-testid="redeem-ada-plutus" panel={
@@ -1563,7 +1563,7 @@ export default class App extends React.Component {
                                     onValueChange={(event) => this.setState({manualFee: event})}
                                 />
                             </FormGroup>
-                            <button style={{padding: "10px"}} onClick={this.buildRedeemAdaFromPlutusScript}>Run</button>
+                            <button style={{padding: "10px"}} onClick={this.buildRedeemAdaFromPlutusScript} data-testid="run-button">Run</button>
                             {/*<button style={{padding: "10px"}} onClick={this.signTransaction}>2. Sign Transaction</button>*/}
                             {/*<button style={{padding: "10px"}} onClick={this.submitTransaction}>3. Submit Transaction</button>*/}
                         </div>
@@ -1710,7 +1710,7 @@ export default class App extends React.Component {
                                     onValueChange={(event) => this.setState({manualFee: event})}
                                 />
                             </FormGroup>
-                            <button style={{padding: "10px"}} onClick={this.buildRedeemTokenFromPlutusScript}>Run
+                            <button style={{padding: "10px"}} onClick={this.buildRedeemTokenFromPlutusScript} data-testid="run-button">Run
                             </button>
                         </div>
                     }/>
