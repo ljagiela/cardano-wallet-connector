@@ -81,7 +81,7 @@ export default class App extends React.Component {
             txBodyCborHex_signed: "",
             submittedTxHash: "",
 
-            addressBech32SendADA: "addr_test1qqce0xd6valqpgfse3cryladmle3en3tk2pp0mr4a9v8m0kapl5xlsj83597h2gfzsc3xmh23fw6x7haha6v9ags8nvqtqqw6s",
+            addressBech32SendADA: "addr_test1qp0g4dftfyefu4lfd8tv9ta55mytw6xx5dndx8saer0cx4umazhvaqresayvnjxp0y4qheljrr6nan5j0szr4v8l8wasafk4m2",
             lovelaceToSend: 3000000,
             assetNameHex: "4c616365436f696e32",
             assetPolicyIdHex: "6b728428c0eb014949d72c94449bbef4b10b6ad2b1b86bd4e92476f0",
