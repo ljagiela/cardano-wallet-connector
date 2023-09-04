@@ -499,7 +499,7 @@ export default class App extends React.Component {
                 if (walletEnabled) {
                     await this.getNetworkId();
                     await this.getUtxos();
-                    await this.getCollateral();
+                    // await this.getCollateral();
                     await this.getBalance();
                     await this.getChangeAddress();
                     await this.getRewardAddresses();
