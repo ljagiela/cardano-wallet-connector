@@ -1177,8 +1177,7 @@ export default class App extends React.Component {
                 </div>
 
 
-                <button style={{padding: "20px"}} onClick={this.refreshData} data-testid="refresh-button">Refresh
-                </button>
+                <button style={{padding: "20px"}} onClick={this.refreshData} data-testid="refresh-button">Refresh</button>
 
                 <p style={{paddingTop: "20px"}}>
                     <span style={{fontWeight: "bold"}}>Wallet Found: </span>
@@ -1223,7 +1222,12 @@ export default class App extends React.Component {
                     <span style={{fontWeight: "bold"}}>Used Address: </span>
                     <span data-testid="wallet-used-address">{this.state.usedAddress}</span>
                 </p>
-                <hr style={{marginTop: "40px", marginBottom: "40px"}}/>
+
+                <hr style={{marginTop: "10px", marginBottom: "10px"}}/>
+
+                <button style={{padding: "10px"}} onClick={this.getCollateral} data-testid="collateral-run-button">Set collateral</button>
+
+                <hr style={{marginTop: "10px", marginBottom: "10px"}}/>
 
                 <Tabs id="TabsExample" vertical={true} onChange={this.handleTabId}
                       selectedTabId={this.state.selectedTabId}>
