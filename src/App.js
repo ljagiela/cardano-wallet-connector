@@ -413,6 +413,14 @@ export default class App extends React.Component {
         }
 
     }
+    signData = async () => {
+        const api = await window.cardano.lace.enable();
+        const ownAddress = await api.getUsedAddresses();
+        const signedData = api.signData(
+            ownAddress[0],
+            '66697865642074686520627567'
+        );
+    }
 
     /**
      * Gets the current balance of in Lovelace in the user's wallet
@@ -1177,7 +1185,8 @@ export default class App extends React.Component {
                 </div>
 
 
-                <button style={{padding: "20px"}} onClick={this.refreshData} data-testid="refresh-button">Refresh</button>
+                <button style={{padding: "20px"}} onClick={this.refreshData} data-testid="refresh-button">Refresh
+                </button>
 
                 <p style={{paddingTop: "20px"}}>
                     <span style={{fontWeight: "bold"}}>Wallet Found: </span>
@@ -1225,7 +1234,12 @@ export default class App extends React.Component {
 
                 <hr style={{marginTop: "10px", marginBottom: "10px"}}/>
 
-                <button style={{padding: "10px"}} onClick={this.getCollateral} data-testid="collateral-run-button">Set collateral</button>
+                <button style={{padding: "10px"}} onClick={this.getCollateral} data-testid="collateral-run-button">Set
+                    collateral
+                </button>
+
+                <button style={{padding: "10px", marginLeft: "5px"}} onClick={this.signData} data-testid="sign-data-run-button">Sign data
+                </button>
 
                 <hr style={{marginTop: "10px", marginBottom: "10px"}}/>
 
@@ -1266,10 +1280,12 @@ export default class App extends React.Component {
                                 />
                             </FormGroup>
 
-                            <button style={{padding: "10px"}} onClick={this.buildSendADATransaction} data-testid="send-ada-run-button">Run</button>
+                            <button style={{padding: "10px"}} onClick={this.buildSendADATransaction}
+                                    data-testid="send-ada-run-button">Run
+                            </button>
                         </div>
                     }/>
-                    <Tab id="2" title="2. Send Token to Address"  data-testid="send-token" panel={
+                    <Tab id="2" title="2. Send Token to Address" data-testid="send-token" panel={
                         <div style={{marginLeft: "20px"}}>
 
                             <FormGroup
@@ -1330,7 +1346,9 @@ export default class App extends React.Component {
                                 />
                             </FormGroup>
 
-                            <button style={{padding: "10px"}} onClick={this.buildSendTokenTransaction} data-testid="send-token-run-button">Run</button>
+                            <button style={{padding: "10px"}} onClick={this.buildSendTokenTransaction}
+                                    data-testid="send-token-run-button">Run
+                            </button>
                         </div>
                     }/>
                     <Tab id="3" title="3. Send ADA to Plutus Script" data-testid="send-ada-plutus" panel={
@@ -1376,7 +1394,9 @@ export default class App extends React.Component {
 
                                 />
                             </FormGroup>
-                            <button style={{padding: "10px"}} onClick={this.buildSendAdaToPlutusScript} data-testid="send-ada-to-plutus-run-button">Run</button>
+                            <button style={{padding: "10px"}} onClick={this.buildSendAdaToPlutusScript}
+                                    data-testid="send-ada-to-plutus-run-button">Run
+                            </button>
                         </div>
                     }/>
                     <Tab id="4" title="4. Send Token to Plutus Script" data-testid="send-token-plutus" panel={
@@ -1463,7 +1483,9 @@ export default class App extends React.Component {
 
                                 />
                             </FormGroup>
-                            <button style={{padding: "10px"}} onClick={this.buildSendTokenToPlutusScript} data-testid="send-token-to-plutus-run-button">Run</button>
+                            <button style={{padding: "10px"}} onClick={this.buildSendTokenToPlutusScript}
+                                    data-testid="send-token-to-plutus-run-button">Run
+                            </button>
                         </div>
                     }/>
                     <Tab id="5" title="5. Redeem ADA from Plutus Script" data-testid="redeem-ada-plutus" panel={
@@ -1567,7 +1589,9 @@ export default class App extends React.Component {
                                     onValueChange={(event) => this.setState({manualFee: event})}
                                 />
                             </FormGroup>
-                            <button style={{padding: "10px"}} onClick={this.buildRedeemAdaFromPlutusScript} data-testid="redeem-ada-from-plutus-run-button">Run</button>
+                            <button style={{padding: "10px"}} onClick={this.buildRedeemAdaFromPlutusScript}
+                                    data-testid="redeem-ada-from-plutus-run-button">Run
+                            </button>
                             {/*<button style={{padding: "10px"}} onClick={this.signTransaction}>2. Sign Transaction</button>*/}
                             {/*<button style={{padding: "10px"}} onClick={this.submitTransaction}>3. Submit Transaction</button>*/}
                         </div>
@@ -1714,7 +1738,8 @@ export default class App extends React.Component {
                                     onValueChange={(event) => this.setState({manualFee: event})}
                                 />
                             </FormGroup>
-                            <button style={{padding: "10px"}} onClick={this.buildRedeemTokenFromPlutusScript} data-testid="redeem-token-from-plutus-run-button">Run
+                            <button style={{padding: "10px"}} onClick={this.buildRedeemTokenFromPlutusScript}
+                                    data-testid="redeem-token-from-plutus-run-button">Run
                             </button>
                         </div>
                     }/>
