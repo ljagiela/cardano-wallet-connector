@@ -204,18 +204,8 @@ export default class App extends React.Component {
         const baseAddr = EnterpriseAddress.new(networkId, cred);
         const addr = baseAddr.to_address();
         const addrBech32 = addr.to_bech32();
-
-        // hash of the address generated from script
-        console.log(Buffer.from(addr.to_bytes(), "utf8").toString("hex"))
-
-        // hash of the address generated using cardano-cli
+        
         const ScriptAddress = Address.from_bech32("addr_test1wpnlxv2xv9a9ucvnvzqakwepzl9ltx7jzgm53av2e9ncv4sysemm8");
-        console.log(Buffer.from(ScriptAddress.to_bytes(), "utf8").toString("hex"))
-
-
-        console.log(ScriptAddress.to_bech32())
-        console.log(addrBech32)
-
     }
 
     /**
