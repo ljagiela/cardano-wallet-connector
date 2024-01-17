@@ -57,12 +57,20 @@ import {
   Ed25519KeyHash,
   NativeScript,
   StakeCredential,
+  TxInputsBuilder,
+  TransactionBody,
 } from "@emurgo/cardano-serialization-lib-asmjs";
 import "./App.css";
 import { blake2b } from "blakejs";
 
 let Buffer = require("buffer/").Buffer;
 let blake = require("blakejs");
+
+const CollateralPreference = {
+  NONE: "none",
+  LOCK: "lock",
+  CollateralOutput: "collateralOutput",
+};
 
 export default class App extends React.Component {
   constructor(props) {
@@ -106,6 +114,8 @@ export default class App extends React.Component {
       transactionIndxLocked: 0,
       lovelaceLocked: 3000000,
       manualFee: 900000,
+
+      collateralPreference: CollateralPreference.NONE,
     };
 
     /**
@@ -126,6 +136,8 @@ export default class App extends React.Component {
      * priceMem: number,
      * maxValSize: number,
      * linearFee: {minFeeB: string, minFeeA: string}, priceStep: number
+     * collateralPercent: number,
+     * maxCollateralInputs: number,
      * }}
      */
     this.protocolParams = {
@@ -141,6 +153,8 @@ export default class App extends React.Component {
       priceMem: 0.0577,
       priceStep: 0.0000721,
       coinsPerUtxoWord: "34482",
+      collateralPercent: 150,
+      maxCollateralInputs: 3,
     };
 
     this.pollWallets = this.pollWallets.bind(this);
@@ -429,6 +443,130 @@ export default class App extends React.Component {
       console.log(err);
     }
   };
+
+  /**
+   * Pick any available UTXO from the wallet and set it as collateral
+   * @returns {Promise<{collateral: TransactionUnspentOutput[]; collateralReturn: BigNum, collateralTotal: BigNum>}
+   */
+  getCollateralLargestFirst = async () => {
+    let collateral = [];
+
+    try {
+      const utxos = [...this.state.Utxos];
+      const minimumCollateralAmount = BigNum.from_str(
+        String(
+          Math.ceil(
+            (this.state.manualFee * this.protocolParams.collateralPercent) /
+              100,
+          ),
+        ),
+      );
+      let total = BigNum.from_str("0");
+
+      utxos.sort((a, b) =>
+        BigNum.from_str(b.amount).compare(BigNum.from_str(a.amount)),
+      );
+
+      for (const utxo of utxos) {
+        if (collateral.length >= this.protocolParams.maxCollateralInputs) {
+          break;
+        }
+
+        total = total.checked_add(BigNum.from_str(utxo.amount));
+        console.log({ utxo: utxo.TransactionUnspentOutput.to_js_value() });
+        collateral.push(utxo);
+
+        if (total.compare(minimumCollateralAmount) >= 0) {
+          break;
+        }
+      }
+
+      if (total.compare(minimumCollateralAmount) < 0) {
+        throw new Error(
+          "Insufficient collateral according to CIP-40 specifications",
+        );
+      }
+
+      return {
+        collateral: collateral.map((c) => c.TransactionUnspentOutput),
+        collateralReturn: total.checked_sub(minimumCollateralAmount),
+        collateralTotal: total,
+      };
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  /**
+   * buid collateral inputs
+   * @param {TransactionBuilder} txBuilder
+   * @returns {Promise<TxInputsBuilder>}
+   */
+  buidCollateralInputs = async (txBuilder) => {
+    const { collateral, collateralReturn, collateralTotal } =
+      await this.getCollateralLargestFirst();
+
+    const builder = TxInputsBuilder.new();
+
+    for (const utxo of collateral) {
+      builder.add_input(
+        utxo.output().address(),
+        utxo.input(),
+        utxo.output().amount(),
+      );
+    }
+
+    txBuilder.set_collateral(builder);
+
+    // TODO: handle assets
+    const colReturn = TransactionOutput.new(
+      Address.from_bech32(this.state.changeAddress),
+      Value.new(collateralReturn),
+    );
+
+    txBuilder.set_collateral_return(colReturn);
+    txBuilder.set_total_collateral(collateralTotal);
+  };
+
+  /**
+   * construct collateral inputs
+   * @param {TransactionBuilder} txBuilder
+   * @returns {Promise<TransactionBody>}
+   */
+  constructCollateralInputsAndTxBody = async (txBuilder) => {
+    switch (this.state.collateralPreference) {
+      case CollateralPreference.LOCK: {
+        const txBody = txBuilder.build();
+        const collateral = this.state.CollatUtxos;
+        const inputs = TransactionInputs.new();
+        collateral.forEach((utxo) => {
+          inputs.add(utxo.input());
+        });
+
+        txBody.set_collateral(inputs);
+
+        return txBody;
+      }
+      case CollateralPreference.CollateralOutput: {
+        await this.buidCollateralInputs(txBuilder);
+        return txBuilder.build();
+      }
+      case CollateralPreference.NONE:
+      default:
+        throw new Error("Collateral preference not set");
+    }
+  };
+
+  updateCollateralPreference = (event) => {
+    const value = event.target.value;
+
+    if (value === CollateralPreference.LOCK) {
+      this.getCollateral();
+    }
+
+    this.setState({ collateralPreference: event.target.value });
+  };
+
   signData = async () => {
     const api = await window.cardano.lace.enable();
     const ownAddress = await api.getUsedAddresses();
@@ -926,14 +1064,9 @@ export default class App extends React.Component {
       ),
     );
 
-    // once the transaction is ready, we build it to get the tx body without witnesses
-    const txBody = txBuilder.build();
+    const txBody = await this.constructCollateralInputsAndTxBody(txBuilder);
 
-    const collateral = this.state.CollatUtxos;
-    const inputs = TransactionInputs.new();
-    collateral.forEach((utxo) => {
-      inputs.add(utxo.input());
-    });
+    console.log("tx body created", { txBody: txBody.to_js_value() });
 
     let datums = PlutusList.new();
     // datums.add(PlutusData.from_bytes(Buffer.from(this.state.datumStr, "utf8")))
@@ -1009,8 +1142,6 @@ export default class App extends React.Component {
 
     const scriptDataHash = hash_script_data(redeemers, costModels, datums);
     txBody.set_script_data_hash(scriptDataHash);
-
-    txBody.set_collateral(inputs);
 
     const baseAddress = BaseAddress.from_address(shelleyChangeAddress);
     const requiredSigners = Ed25519KeyHashes.new();
@@ -1095,14 +1226,8 @@ export default class App extends React.Component {
     const txOutput = txOutputBuilder.build();
     txBuilder.add_output(txOutput);
 
-    // once the transaction is ready, we build it to get the tx body without witnesses
-    const txBody = txBuilder.build();
-
-    const collateral = this.state.CollatUtxos;
-    const inputs = TransactionInputs.new();
-    collateral.forEach((utxo) => {
-      inputs.add(utxo.input());
-    });
+    const txBody = await this.constructCollateralInputsAndTxBody(txBuilder);
+    console.log("tx body created", { txBody: txBody.to_js_value() });
 
     let datums = PlutusList.new();
     // datums.add(PlutusData.from_bytes(Buffer.from(this.state.datumStr, "utf8")))
@@ -1164,8 +1289,6 @@ export default class App extends React.Component {
 
     const scriptDataHash = hash_script_data(redeemers, costModels, datums);
     txBody.set_script_data_hash(scriptDataHash);
-
-    txBody.set_collateral(inputs);
 
     const baseAddress = BaseAddress.from_address(shelleyChangeAddress);
     const requiredSigners = Ed25519KeyHashes.new();
@@ -1304,13 +1427,19 @@ export default class App extends React.Component {
 
         <hr style={{ marginTop: "10px", marginBottom: "10px" }} />
 
-        <button
-          style={{ padding: "10px" }}
-          onClick={this.getCollateral}
+        <label htmlFor="collateral-select">Set collateral</label>
+        <select
+          id="collateral-select"
           data-testid="collateral-run-button"
+          value={this.state.collateralPreference}
+          onChange={this.updateCollateralPreference}
         >
-          Set collateral
-        </button>
+          <option value={CollateralPreference.NONE}></option>
+          <option value={CollateralPreference.LOCK}>Lock UTXO</option>
+          <option value={CollateralPreference.CollateralOutput}>
+            Collateral output
+          </option>
+        </select>
 
         <button
           style={{ padding: "10px", marginLeft: "5px" }}
