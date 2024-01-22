@@ -490,7 +490,7 @@ export default class App extends React.Component {
       return {
         collateral: collateral.map((c) => c.TransactionUnspentOutput),
         collateralReturn: total.checked_sub(minimumCollateralAmount),
-        collateralTotal: total,
+        collateralTotal: minimumCollateralAmount,
       };
     } catch (err) {
       console.error(err);
