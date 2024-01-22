@@ -6,7 +6,7 @@
   "dependencies": {
     "@blueprintjs/core": "^3.53.0",
     "@blueprintjs/icons": "^3.32.0",
-    "@emurgo/cardano-serialization-lib-asmjs": "^10.0.4-beta.4",
+    "@emurgo/cardano-serialization-lib-asmjs": "^11.5.0",
     "@testing-library/jest-dom": "^5.16.1",
     "@testing-library/react": "^12.1.2",
     "@testing-library/user-event": "^13.5.0",
@@ -25,7 +25,8 @@
     "start": "react-scripts --max-old-space-size=8192 start",
     "build": "react-scripts --max-old-space-size=8192 build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "prepare": "husky install"
   },
   "eslintConfig": {
     "extends": [
@@ -46,6 +47,11 @@
     ]
   },
   "devDependencies": {
-    "gh-pages": "^5.0.0"
+    "gh-pages": "^5.0.0",
+    "husky": "^8.0.3",
+    "prettier": "3.2.4"
+  },
+  "lint-staged": {
+    "*.{js,css,md}": "prettier --write"
   }
 }
