@@ -75,6 +75,8 @@ export default class App extends React.Component {
             changeAddress: undefined,
             rewardAddress: undefined,
             usedAddress: undefined,
+            usedAddresses: undefined,
+            unusedAddresses: undefined,
 
             txBody: undefined,
             txBodyCborHex_unsigned: "",
@@ -468,16 +470,35 @@ export default class App extends React.Component {
      * @returns {Promise<void>}
      */
     getUsedAddresses = async () => {
-
         try {
             const raw = await this.API.getUsedAddresses();
-            const rawFirst = raw[0];
-            const usedAddress = Address.from_bytes(Buffer.from(rawFirst, "hex")).to_bech32()
-            // console.log(rewardAddress)
-            this.setState({usedAddress})
-
+            
+            // Convert each raw address and store in an array
+            const usedAddresses = raw.map((address) => 
+                Address.from_bytes(Buffer.from(address, "hex")).to_bech32()
+            );
+            this.setState({ 
+                usedAddresses,
+                usedAddress: usedAddresses[0]
+            });
+    
         } catch (err) {
-            console.log(err)
+            console.log(err);
+        }
+    }
+
+    getUnusedAddresses = async () => {
+        try {
+            const raw = await this.API.getUnusedAddresses();
+            const unusedAddresses = raw.map((address) => 
+                Address.from_bytes(Buffer.from(address, "hex")).to_bech32()
+            );
+            this.setState({ 
+                unusedAddresses,
+            });
+    
+        } catch (err) {
+            console.log(err);
         }
     }
 
@@ -502,6 +523,7 @@ export default class App extends React.Component {
                     await this.getChangeAddress();
                     await this.getRewardAddresses();
                     await this.getUsedAddresses();
+                    await this.getUnusedAddresses();
                 } else {
                     await this.setState({
                         Utxos: null,
@@ -510,6 +532,8 @@ export default class App extends React.Component {
                         changeAddress: null,
                         rewardAddress: null,
                         usedAddress: null,
+                        usedAddresses: null,
+                        unusedAddresses: null,
 
                         txBody: null,
                         txBodyCborHex_unsigned: "",
@@ -527,6 +551,8 @@ export default class App extends React.Component {
                     changeAddress: null,
                     rewardAddress: null,
                     usedAddress: null,
+                    usedAddresses: null,
+                    unusedAddresses: null,
 
                     txBody: null,
                     txBodyCborHex_unsigned: "",
@@ -639,6 +665,59 @@ export default class App extends React.Component {
 
     }
 
+    buildSendADATransactionToUnused = async () => {
+        const txBuilder = await this.initTransactionBuilder();
+    
+        // The address to receive ADA (an unused address from your wallet)
+        const shelleyOutputAddress = Address.from_bech32(this.state.unusedAddresses[0]);
+    
+        // You can optionally define a different change address or keep it the same
+        const shelleyChangeAddress = Address.from_bech32(this.state.changeAddress);
+    
+        // Add output (sending ADA to the unused address)
+        txBuilder.add_output(
+            TransactionOutput.new(
+                shelleyOutputAddress,
+                Value.new(BigNum.from_str(this.state.lovelaceToSend.toString()))
+            ),
+        );
+    
+        // Find the available UTXOs in the wallet and use them as Inputs
+        const txUnspentOutputs = await this.getTxUnspentOutputs();
+        txBuilder.add_inputs_from(txUnspentOutputs, 1);
+    
+        // Calculate the min fee required and send any change to the change address
+        txBuilder.add_change_if_needed(shelleyChangeAddress);
+    
+        // Build the transaction to get the tx body without witnesses
+        const txBody = txBuilder.build();
+    
+        // Transaction witness
+        const transactionWitnessSet = TransactionWitnessSet.new();
+    
+        const tx = Transaction.new(
+            txBody,
+            TransactionWitnessSet.from_bytes(transactionWitnessSet.to_bytes())
+        );
+    
+        let txVkeyWitnesses = await this.API.signTx(Buffer.from(tx.to_bytes(), "utf8").toString("hex"), true);
+    
+        console.log(txVkeyWitnesses);
+    
+        txVkeyWitnesses = TransactionWitnessSet.from_bytes(Buffer.from(txVkeyWitnesses, "hex"));
+    
+        transactionWitnessSet.set_vkeys(txVkeyWitnesses.vkeys());
+    
+        const signedTx = Transaction.new(
+            tx.body(),
+            transactionWitnessSet
+        );
+    
+        const submittedTxHash = await this.API.submitTx(Buffer.from(signedTx.to_bytes(), "utf8").toString("hex"));
+        console.log(submittedTxHash);
+        this.setState({submittedTxHash});
+    }
+    
 
     buildSendTokenTransaction = async () => {
 
@@ -1222,6 +1301,33 @@ export default class App extends React.Component {
                     <span data-testid="wallet-used-address">{this.state.usedAddress}</span>
                 </p>
 
+                <p>
+                    <span style={{ fontWeight: "bold" }}>Used Addresses: </span>
+                        <ul data-testid="wallet-used-addresses">
+                            {this.state.usedAddresses && this.state.usedAddresses.length > 0 ? (
+                            this.state.usedAddresses.map((address, index) => (
+                            <li key={index}>{address}</li>
+                            ))
+                            ) : (
+                            <li>No used addresses found</li>
+                            )}
+                        </ul>
+                </p>
+                <p>
+                    <span style={{ fontWeight: "bold" }}>Unused Addresses: </span>
+                    <ul data-testid="wallet-unused-addresses">
+                        {this.state.unusedAddresses && this.state.unusedAddresses.length > 0 ? (
+                            this.state.unusedAddresses.map((address, index) => (
+                                <li key={index}>{address}</li>
+                            ))
+                        ) : (
+                            <li>No unused addresses found</li>
+                        )}
+                    </ul>
+                </p>
+
+
+
                 <hr style={{marginTop: "10px", marginBottom: "10px"}}/>
 
                 <button style={{padding: "10px"}} onClick={this.getCollateral} data-testid="collateral-run-button">Set
@@ -1733,6 +1839,35 @@ export default class App extends React.Component {
                             </button>
                         </div>
                     }/>
+                    <Tab id="7" title="7. Transfer ADA to Unused Address" data-testid="send-ada-to-unused" panel={
+                        <div style={{marginLeft: "20px"}}>
+
+                            <FormGroup
+                                helperText="Transfer ADA from a used address to an unused address within your wallet..."
+                                label="Amount to Transfer"
+                                labelFor="order-amount-input7"
+                            >
+                                <NumericInput
+                                    id="order-amount-input7"
+                                    disabled={false}
+                                    leftIcon={"variable"}
+                                    allowNumericCharactersOnly={true}
+                                    value={this.state.lovelaceToSend}
+                                    min={1000000}
+                                    stepSize={1000000}
+                                    majorStepSize={1000000}
+                                    onValueChange={(event) => this.setState({lovelaceToSend: event})}
+                                    data-testid="send-ada-to-unused-value-input"
+                                />
+                            </FormGroup>
+
+                            <button style={{padding: "10px"}} onClick={this.buildSendADATransactionToUnused}
+                                    data-testid="send-ada-to-unused-run-button">Run
+                            </button>
+                        </div>
+                    }/>
+
+
                     <Tabs.Expander/>
                 </Tabs>
 
