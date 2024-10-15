@@ -206,7 +206,7 @@ export default class App extends React.Component {
         const baseAddr = EnterpriseAddress.new(networkId, cred);
         const addr = baseAddr.to_address();
         const addrBech32 = addr.to_bech32();
-        
+
         const ScriptAddress = Address.from_bech32("addr_test1wpnlxv2xv9a9ucvnvzqakwepzl9ltx7jzgm53av2e9ncv4sysemm8");
     }
 
@@ -378,7 +378,7 @@ export default class App extends React.Component {
      * would have been incorrectly written.
      * The amount of collateral to use is set in the wallet
      * @returns {Promise<void>}
-     */
+     */Collateral
     getCollateral = async () => {
 
         let CollatUtxos = [];
@@ -406,9 +406,9 @@ export default class App extends React.Component {
 
     }
     signData = async () => {
-        const api = await window.cardano.lace.enable();
-        const ownAddress = await api.getUsedAddresses();
-        const signedData = api.signData(
+        const walletEnabled = await this.enableWallet();
+        const ownAddress = await this.API.getUsedAddresses();
+        const signedData = this.API.signData(
             ownAddress[0],
             '66697865642074686520627567'
         );
@@ -472,16 +472,16 @@ export default class App extends React.Component {
     getUsedAddresses = async () => {
         try {
             const raw = await this.API.getUsedAddresses();
-            
+
             // Convert each raw address and store in an array
-            const usedAddresses = raw.map((address) => 
+            const usedAddresses = raw.map((address) =>
                 Address.from_bytes(Buffer.from(address, "hex")).to_bech32()
             );
-            this.setState({ 
+            this.setState({
                 usedAddresses,
                 usedAddress: usedAddresses[0]
             });
-    
+
         } catch (err) {
             console.log(err);
         }
@@ -490,13 +490,13 @@ export default class App extends React.Component {
     getUnusedAddresses = async () => {
         try {
             const raw = await this.API.getUnusedAddresses();
-            const unusedAddresses = raw.map((address) => 
+            const unusedAddresses = raw.map((address) =>
                 Address.from_bytes(Buffer.from(address, "hex")).to_bech32()
             );
-            this.setState({ 
+            this.setState({
                 unusedAddresses,
             });
-    
+
         } catch (err) {
             console.log(err);
         }
@@ -667,13 +667,13 @@ export default class App extends React.Component {
 
     buildSendADATransactionToUnused = async () => {
         const txBuilder = await this.initTransactionBuilder();
-    
+
         // The address to receive ADA (an unused address from your wallet)
         const shelleyOutputAddress = Address.from_bech32(this.state.unusedAddresses[0]);
-    
+
         // You can optionally define a different change address or keep it the same
         const shelleyChangeAddress = Address.from_bech32(this.state.changeAddress);
-    
+
         // Add output (sending ADA to the unused address)
         txBuilder.add_output(
             TransactionOutput.new(
@@ -681,43 +681,43 @@ export default class App extends React.Component {
                 Value.new(BigNum.from_str(this.state.lovelaceToSend.toString()))
             ),
         );
-    
+
         // Find the available UTXOs in the wallet and use them as Inputs
         const txUnspentOutputs = await this.getTxUnspentOutputs();
         txBuilder.add_inputs_from(txUnspentOutputs, 1);
-    
+
         // Calculate the min fee required and send any change to the change address
         txBuilder.add_change_if_needed(shelleyChangeAddress);
-    
+
         // Build the transaction to get the tx body without witnesses
         const txBody = txBuilder.build();
-    
+
         // Transaction witness
         const transactionWitnessSet = TransactionWitnessSet.new();
-    
+
         const tx = Transaction.new(
             txBody,
             TransactionWitnessSet.from_bytes(transactionWitnessSet.to_bytes())
         );
-    
+
         let txVkeyWitnesses = await this.API.signTx(Buffer.from(tx.to_bytes(), "utf8").toString("hex"), true);
-    
+
         console.log(txVkeyWitnesses);
-    
+
         txVkeyWitnesses = TransactionWitnessSet.from_bytes(Buffer.from(txVkeyWitnesses, "hex"));
-    
+
         transactionWitnessSet.set_vkeys(txVkeyWitnesses.vkeys());
-    
+
         const signedTx = Transaction.new(
             tx.body(),
             transactionWitnessSet
         );
-    
+
         const submittedTxHash = await this.API.submitTx(Buffer.from(signedTx.to_bytes(), "utf8").toString("hex"));
         console.log(submittedTxHash);
         this.setState({submittedTxHash});
     }
-    
+
 
     buildSendTokenTransaction = async () => {
 
@@ -1330,7 +1330,7 @@ export default class App extends React.Component {
 
                 <hr style={{marginTop: "10px", marginBottom: "10px"}}/>
 
-                <button style={{padding: "10px"}} onClick={this.getCollateral} data-testid="collateral-run-button">Set
+                <button style={{padding: "10px"}} onClick={this.get} data-testid="collateral-run-button">Set
                     collateral
                 </button>
 
