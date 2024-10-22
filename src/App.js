@@ -1330,7 +1330,7 @@ export default class App extends React.Component {
 
                 <hr style={{marginTop: "10px", marginBottom: "10px"}}/>
 
-                <button style={{padding: "10px"}} onClick={this.get} data-testid="collateral-run-button">Set
+                <button style={{padding: "10px"}} onClick={this.getCollateral} data-testid="collateral-run-button">Set
                     collateral
                 </button>
 
