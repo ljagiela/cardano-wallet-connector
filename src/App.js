@@ -69,6 +69,7 @@ export default class App extends React.Component {
             wallets: [],
 
             networkId: undefined,
+            networkMagic: undefined,
             Utxos: undefined,
             CollatUtxos: undefined,
             balance: undefined,
@@ -302,6 +303,16 @@ export default class App extends React.Component {
         }
     }
 
+    getNetworkMagic = async () => {
+        try {
+            const api = await window.cardano.lace.enable({ extensions: [{cip: 142}]});
+            const networkMagic = await api.cip142.getNetworkMagic();
+            this.setState( {networkMagic} )
+        } catch (err) {
+            console.log(err)
+        }
+    }
+
     /**
      * Gets the UTXOs from the user's wallet and then
      * stores in an object in the state
@@ -517,6 +528,7 @@ export default class App extends React.Component {
                 const walletEnabled = await this.enableWallet();
                 if (walletEnabled) {
                     await this.getNetworkId();
+                    await this.getNetworkMagic();
                     await this.getUtxos();
                     // await this.getCollateral();
                     await this.getBalance();
@@ -1278,6 +1290,10 @@ export default class App extends React.Component {
                     <span style={{fontWeight: "bold"}}>Network Id (0 = testnet; 1 = mainnet): </span>
                     <span data-testid="wallet-network-id">{this.state.networkId}</span>
                 </p>
+                <p>
+                    <span style={{fontWeight: "bold"}}>Network Magic (1 = preprod; 2 = preview; 764824073 = mainnet ): </span>
+                    <span data-testid="wallet-network-magic">{this.state.networkMagic}</span>
+                </p>
                 <p style={{paddingTop: "20px"}}>
                     <span style={{fontWeight: "bold"}}>UTXOs: (UTXO #txid = ADA amount + AssetAmount + policyId.AssetName + ...): </span>
                     {this.state.Utxos?.map(x =>
@@ -1325,7 +1341,6 @@ export default class App extends React.Component {
                         )}
                     </ul>
                 </p>
-
 
 
                 <hr style={{marginTop: "10px", marginBottom: "10px"}}/>
